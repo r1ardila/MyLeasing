@@ -249,24 +249,59 @@ namespace MyLeasing.Web.Controllers
             return View(view);
         }
 
-        
-
-       /* private IEnumerable<SelectListItem> GetComboPropertyTypes()
+        public async Task<IActionResult> EditProperty(int? id)
         {
-            var list = _dataContext.PropertyTypes.Select(p => new SelectListItem
+            if (id == null)
             {
-                Text = p.Name,
-                Value = p.Id.ToString()
-            }).OrderBy(p => p.Text).ToList();
+                return NotFound();
+            }
 
-            list.Insert(0, new SelectListItem
+            var property = await _dataContext.Properties
+                .Include(p => p.Owner)
+                .Include(p => p.PropertyType)
+                .FirstOrDefaultAsync(p => p.Id == id);
+            if (property == null)
             {
-                Text = "(Select a property type...)",
-                Value = "0"
-            });
+                return NotFound();
+            }
 
-            return list;
-        }*/
+            var view = _converterHelper.ToPropertyViewModel(property);
+
+            return View(view);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditProperty(PropertyViewModel view)
+        {
+            if (ModelState.IsValid)
+            {
+                var property = await _converterHelper.ToPropertyAsync(view, false);
+                _dataContext.Properties.Update(property);
+                await _dataContext.SaveChangesAsync();
+                return RedirectToAction($"{nameof(Details)}/{view.OwnerId}");
+            }
+
+            return View(view);
+        }
+
+
+
+        /* private IEnumerable<SelectListItem> GetComboPropertyTypes()
+         {
+             var list = _dataContext.PropertyTypes.Select(p => new SelectListItem
+             {
+                 Text = p.Name,
+                 Value = p.Id.ToString()
+             }).OrderBy(p => p.Text).ToList();
+
+             list.Insert(0, new SelectListItem
+             {
+                 Text = "(Select a property type...)",
+                 Value = "0"
+             });
+
+             return list;
+         }*/
 
     }
 }

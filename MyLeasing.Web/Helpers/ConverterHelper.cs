@@ -31,17 +31,41 @@ namespace MyLeasing.Web.Helpers
                 Id = isNew ? 0 : view.Id,
                 IsAvailable = view.IsAvailable,
                 Neighborhood = view.Neighborhood,
+                Owner = await _dataContext.Owners.FindAsync(view.OwnerId),
                 Price = view.Price,
                 PropertyImages = isNew ? new List<PropertyImage>() : view.PropertyImages,
+                PropertyType = await _dataContext.PropertyTypes.FindAsync(view.PropertyTypeId),
+                Remarks = view.Remarks,
                 Rooms = view.Rooms,
                 SquareMeters = view.SquareMeters,
                 Stratum = view.Stratum,
-                Owner = await _dataContext.Owners.FindAsync(view.OwnerId),
-                PropertyType = await _dataContext.PropertyTypes.FindAsync(view.PropertyTypeId),
-                Remarks = view.Remarks
+                
             };
         }
 
-
+        public PropertyViewModel ToPropertyViewModel(Property property)
+        {
+            return new PropertyViewModel
+            {
+                Address = property.Address,
+                Contracts = property.Contracts,
+                HasParkingLot = property.HasParkingLot,
+                Id = property.Id,
+                IsAvailable = property.IsAvailable,
+                Neighborhood = property.Neighborhood,
+                Owner = property.Owner,
+                Price = property.Price,
+                PropertyImages = property.PropertyImages,
+                PropertyType = property.PropertyType,
+                Remarks = property.Remarks,
+                Rooms = property.Rooms,
+                SquareMeters = property.SquareMeters,
+                Stratum = property.Stratum,
+                OwnerId = property.Owner.Id,
+                PropertyTypeId = property.PropertyType.Id,
+                PropertyTypes = _combosHelper.GetComboPropertyTypes(),
+                
+            };
+        }
     }
 }
