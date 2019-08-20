@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MyLeasing.Web.Data;
 using MyLeasing.Web.Data.Entities;
@@ -17,12 +18,18 @@ namespace MyLeasing.Web.Controllers
     {
         private readonly DataContext _dataContext;
         private readonly IUserHelper _userHelper;
+        private readonly ICombosHelper _combosHelper;
+        private readonly IConverterHelper _converterHelper;
 
-        public OwnersController(DataContext dataContext, IUserHelper userHelper)
+        public OwnersController(DataContext dataContext, 
+            IUserHelper userHelper, 
+            ICombosHelper combosHelper,
+            IConverterHelper converterHelper)
         {
             _dataContext = dataContext;
             _userHelper = userHelper;
-           
+            _combosHelper = combosHelper;
+           _converterHelper = converterHelper;
         }
 
         // GET: Owners
@@ -205,5 +212,61 @@ namespace MyLeasing.Web.Controllers
         {
             return _dataContext.Owners.Any(e => e.Id == id);
         }
+
+        public async Task<IActionResult> AddProperty(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var owner = await _dataContext.Owners.FindAsync(id.Value);
+            if (owner == null)
+            {
+                return NotFound();
+            }
+
+            var view = new PropertyViewModel
+            {
+                OwnerId = owner.Id,
+                PropertyTypes = _combosHelper.GetComboPropertyTypes()
+            };
+
+            return View(view);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddProperty(PropertyViewModel view)
+        {
+            if (ModelState.IsValid)
+            {
+                var property = await _converterHelper.ToPropertyAsync(view, true);
+                _dataContext.Properties.Add(property);
+                await _dataContext.SaveChangesAsync();
+                return RedirectToAction($"{nameof(Details)}/{view.OwnerId}");
+            }
+
+            return View(view);
+        }
+
+        
+
+       /* private IEnumerable<SelectListItem> GetComboPropertyTypes()
+        {
+            var list = _dataContext.PropertyTypes.Select(p => new SelectListItem
+            {
+                Text = p.Name,
+                Value = p.Id.ToString()
+            }).OrderBy(p => p.Text).ToList();
+
+            list.Insert(0, new SelectListItem
+            {
+                Text = "(Select a property type...)",
+                Value = "0"
+            });
+
+            return list;
+        }*/
+
     }
 }
